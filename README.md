@@ -75,7 +75,7 @@ The aggregated outputs of the analytical queries (compact summary tables stored 
 
 | Metric / Category | Summary / Insight |
 | :--- | :--- |
-| **Primary Output Files** | Located in [`outputs/`](./outputs/) (`monthly_revenue.csv`, `top_categories.csv`, etc.) |
+| **Primary Output Files** | Located in [`outputs/`](./outputs/) (`monthly_revenue_output.csv`, `top_categories_output.csv`, etc.) |
 | **Top Revenue Driver** | Health & Beauty (`beleza_saude`) and Watches & Gifts leading overall sales volume |
 | **Data Scope** | Cleaned aggregations derived from ~100k Brazilian e-commerce orders (2016–2018) |
 
