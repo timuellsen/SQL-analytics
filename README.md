@@ -6,13 +6,6 @@ The goal of this project is to analyze monthly revenue growth, identify top prod
 
 ---
 
-## 🛠️ Tech Stack & Database Setup
-- **Database Engine:** SQLite (ANSI SQL compatible)
-- **Languages:** SQL, Python (Data Pipeline)
-- **GUI & Tools:** DB Browser for SQLite, VS Code
-
----
-
 ## 📊 Key Business Questions & SQL Insights
 
 ### 1. Monthly Revenue & Order Volume Growth
@@ -77,7 +70,25 @@ ORDER BY total_spent DESC;
 
 ---
 
+### 📊 Sample Query Output / Key Results
+The aggregated outputs of the analytical queries (compact summary tables stored as CSV files under the `outputs/` directory) highlight the scale of the dataset and key revenue drivers:
+
+| Metric / Category | Summary / Insight |
+| :--- | :--- |
+| **Primary Output Files** | Located in [`outputs/`](./outputs/) (`monthly_revenue.csv`, `top_categories.csv`, etc.) |
+| **Top Revenue Driver** | Health & Beauty (`beleza_saude`) and Watches & Gifts leading overall sales volume |
+| **Data Scope** | Cleaned aggregations derived from ~100k Brazilian e-commerce orders (2016–2018) |
+
+---
+
 ## 🚀 How to Run Locally
 1. Download the dataset from [Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce).
 2. Run `python scripts/setup_database.py` to populate `ecommerce.db`.
 3. Open `ecommerce.db` using DB Browser for SQLite or DBeaver and execute queries from `/queries`.
+
+---
+
+## 🛠️ Tech Stack & Database Setup
+- **Database Engine:** SQLite (ANSI SQL compatible)
+- **Languages:** SQL, Python (Data Pipeline)
+- **GUI & Tools:** DB Browser for SQLite, VS Code
