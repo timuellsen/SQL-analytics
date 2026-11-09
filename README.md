@@ -45,40 +45,72 @@ LIMIT 5;
 
 ---
 
-### 3. Customer RFM & Value Segmentation
-Uses SQL Window Functions (`NTILE`) to segment customers based on order frequency and total monetary spend.
+### 3. Customer RFM Segmentation
+
+Segments customers by **Recency, Frequency and Monetary value (RFM)** to show which customers drive revenue and which are at risk of churning. Uses CTEs and the window function `NTILE`.
+
+**Method**
+- **Recency:** days between a customer's last delivered order and the latest order in the dataset (the dataset ends in 2018, so "today" would label every customer as inactive). Scored 1–4 with `NTILE(4)`, where 4 = most recent.
+- **Frequency:** number of delivered orders. Because ~97 % of customers ordered only once, quartiles are not meaningful here, so fixed tiers are used (1 order = 1, 2 orders = 2, 3+ orders = 3).
+- **Monetary:** total payment value per customer. Scored 1–4 with `NTILE(4)`, where 4 = highest spend.
+- Segments are derived from the scores: *Repeat customers*, *Top customers*, *Recent, low spend*, *At risk, high spend*, *Inactive*.
 
 ```sql
-WITH CustomerMetrics AS (
-    SELECT 
-        c.customer_unique_id,
-        COUNT(DISTINCT o.order_id) AS order_count,
-        ROUND(SUM(p.payment_value), 2) AS total_spent
-    FROM customers c
-    JOIN orders o ON c.customer_id = o.customer_id
-    JOIN payments p ON o.order_id = p.order_id
-    WHERE o.order_status = 'delivered'
-    GROUP BY c.customer_unique_id
-)
-SELECT 
-    customer_unique_id,
-    order_count,
-    total_spent,
-    NTILE(4) OVER (ORDER BY total_spent DESC) AS spending_quartile
-FROM CustomerMetrics
-ORDER BY total_spent DESC;
+-- Core of the scoring step (full query: queries/03_rfm_segmentation.sql)
+NTILE(4) OVER (ORDER BY recency_days DESC) AS r_score,
+CASE WHEN order_count >= 3 THEN 3
+     WHEN order_count = 2  THEN 2
+     ELSE 1 END                            AS f_score,
+NTILE(4) OVER (ORDER BY total_spent ASC)   AS m_score
 ```
-
 ---
 
-### 📊 Sample Query Output / Key Results
-The aggregated outputs of the analytical queries (compact summary tables stored as CSV files under the `outputs/` directory) highlight the scale of the dataset and key revenue drivers:
+### 📊 Key Results
+Scope: **delivered orders only** (96,477 orders, Oct 2016 – Aug 2018). All amounts in Brazilian reais (BRL). Full result tables are stored as CSV files in [`outputs/`](./outputs/).
 
-| Metric / Category | Summary / Insight |
-| :--- | :--- |
-| **Primary Output Files** | Located in [`outputs/`](./outputs/) (`monthly_revenue_output.csv`, `top_categories_output.csv`, etc.) |
-| **Top Revenue Driver** | Health & Beauty (`beleza_saude`) and Watches & Gifts (`relogios_presentes`) leading overall sales volume |
-| **Data Scope** | Cleaned aggregations derived from ~100k Brazilian e-commerce orders (2016–2018) |
+#### 1. Monthly revenue & order volume
+
+| Month | Orders | Revenue (BRL) |
+| :--- | ---: | ---: |
+| Jan 2017 | 750 | 127,546 |
+| Nov 2017 (peak) | 7,289 | 1,153,528 |
+| Jan 2018 | 7,069 | 1,078,607 |
+| Aug 2018 | 6,351 | 985,414 |
+
+- Monthly revenue grew roughly **8.5x** between January 2017 and January 2018, then levelled off at about BRL 1.0–1.15 M per month during 2018.
+- November 2017 is the strongest month in both orders and revenue, which is consistent with Black Friday demand.
+- Oct–Dec 2016 contain very few orders (Dec 2016: a single order), so early months should not be read as a trend.
+
+#### 2. Top 5 product categories by revenue
+
+Revenue = sum of item prices (excl. shipping).
+
+| Category | Items sold | Orders | Revenue (BRL) |
+| :--- | ---: | ---: | ---: |
+| `beleza_saude` (Health & Beauty) | 9,670 | 8,836 | 1,258,681 |
+| `relogios_presentes` (Watches & Gifts) | 5,991 | 5,624 | 1,205,006 |
+| `cama_mesa_banho` (Bed, Bath & Table) | 11,115 | 9,417 | 1,036,989 |
+| `esporte_lazer` (Sports & Leisure) | 8,641 | 7,720 | 988,049 |
+| `informatica_acessorios` (Computer Accessories) | 7,827 | 6,689 | 911,954 |
+
+- `relogios_presentes` ranks second in revenue with only 5,991 items sold: its revenue per item (~BRL 201) is about twice that of `beleza_saude` (~BRL 130).
+- `cama_mesa_banho` sells the most items but ranks third in revenue (~BRL 93 per item).
+
+#### 3. RFM customer segments
+
+| Segment | Customers | Avg. spend (BRL) | Total revenue (BRL) | Revenue share |
+| :--- | ---: | ---: | ---: | ---: |
+| Top customers | 22,529 | 261.34 | 5,887,620 | 38.2 % |
+| At risk, high spend | 21,682 | 264.30 | 5,730,484 | 37.2 % |
+| Inactive | 23,745 | 63.84 | 1,515,988 | 9.8 % |
+| Recent, low spend | 22,600 | 63.01 | 1,424,012 | 9.2 % |
+| Repeat customers | 2,801 | 308.59 | 864,357 | 5.6 % |
+
+- The two high-spend segments (about 47 % of customers) generate **~75 % of revenue**.
+- **"At risk, high spend"** alone accounts for 37.2 % of revenue (21,682 customers who have not ordered recently): the most valuable target for retention campaigns.
+- Only 3 % of customers (2,801) ordered more than once, but they have the highest average spend (BRL 309).
+
+> **Note:** Revenue in queries 1 and 3 is based on `payment_value` (includes shipping and vouchers), while category revenue in query 2 uses item prices, so these figures are not directly comparable. Because `NTILE` creates equally sized groups, similar segment sizes reflect the method, not the business.
 
 ---
 
