@@ -8,8 +8,8 @@ The goal of this project is to analyze monthly revenue growth, identify top prod
 
 ## 📊 Key Business Questions & SQL Insights
 
-### 1. Monthly Revenue & Order Volume Growth
-Tracks order counts and delivered revenue month-over-month to evaluate business growth.
+### 1. Monthly Revenue & Order Volume
+Aggregates delivered orders per purchase month. Revenue is the sum of `payment_value` (includes shipping and vouchers); orders are counted with `COUNT(DISTINCT order_id)`, because an order can have several payment rows.
 
 ```sql
 SELECT 
@@ -26,7 +26,7 @@ ORDER BY order_month ASC;
 ---
 
 ### 2. Top-Performing Product Categories by Revenue
-Identifies the highest-grossing product categories to highlight key revenue drivers and inventory priorities.
+Ranks categories by the sum of item prices (`order_items.price`, excl. shipping) for delivered orders. Revenue is taken from `order_items` instead of `payments`: joining `payments` to `order_items` would count payment amounts once per item and overstate revenue for multi-item orders.
 
 ```sql
 SELECT
@@ -37,7 +37,8 @@ SELECT
 FROM order_items oi
 JOIN products pr ON oi.product_id = pr.product_id
 JOIN orders o ON oi.order_id = o.order_id
-WHERE pr.product_category_name IS NOT NULL
+WHERE o.order_status = 'delivered'
+  AND pr.product_category_name IS NOT NULL
 GROUP BY pr.product_category_name
 ORDER BY category_revenue DESC
 LIMIT 5;
@@ -87,11 +88,11 @@ Revenue = sum of item prices (excl. shipping).
 
 | Category | Items sold | Orders | Revenue (BRL) |
 | :--- | ---: | ---: | ---: |
-| `beleza_saude` (Health & Beauty) | 9,670 | 8,836 | 1,258,681 |
-| `relogios_presentes` (Watches & Gifts) | 5,991 | 5,624 | 1,205,006 |
-| `cama_mesa_banho` (Bed, Bath & Table) | 11,115 | 9,417 | 1,036,989 |
-| `esporte_lazer` (Sports & Leisure) | 8,641 | 7,720 | 988,049 |
-| `informatica_acessorios` (Computer Accessories) | 7,827 | 6,689 | 911,954 |
+| `beleza_saude` (Health & Beauty) | 9,465 | 8,647 | 1,233,132
+| `relogios_presentes` (Watches & Gifts) | 5,859 | 5,495 | 1,166,177
+| `cama_mesa_banho` (Bed, Bath & Table) | 10,953 | 9,272 | 1,023,435
+| `esporte_lazer` (Sports & Leisure) | 8,431 | 7,530 | 954,853
+| `informatica_acessorios` (Computer Accessories) | 7,644 | 6,530 | 888,725
 
 - `relogios_presentes` ranks second in revenue with only 5,991 items sold: its revenue per item (~BRL 201) is about twice that of `beleza_saude` (~BRL 130).
 - `cama_mesa_banho` sells the most items but ranks third in revenue (~BRL 93 per item).
