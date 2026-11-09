@@ -7,7 +7,8 @@ SELECT
 FROM order_items oi
 JOIN products pr ON oi.product_id = pr.product_id
 JOIN orders o ON oi.order_id = o.order_id
-WHERE pr.product_category_name IS NOT NULL
+WHERE o.order_status = 'delivered'
+  AND pr.product_category_name IS NOT NULL
 GROUP BY pr.product_category_name
 ORDER BY category_revenue DESC
 LIMIT 5;
