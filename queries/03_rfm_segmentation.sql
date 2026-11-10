@@ -1,3 +1,4 @@
+-- Segments customers by Recency, Frequency and Monetary value (RFM) to show which customers drive revenue and which are at risk of churning
 WITH ref AS (
 	-- Reference date = latest delivered order in the dataset
     SELECT MAX(order_purchase_timestamp) AS max_ts
