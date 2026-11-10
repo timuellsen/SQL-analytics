@@ -1,6 +1,6 @@
 -- How does revenue and number of orders develop from month to month?
 SELECT
-	strftime('%m-%Y', o.order_purchase_timestamp) AS order_month,
+	strftime('%Y-%m', o.order_purchase_timestamp) AS order_month,
 	COUNT(DISTINCT o.order_id) AS total_orders,
 	ROUND(SUM(p.payment_value), 2) AS total_revenue
 FROM orders o
