@@ -1,0 +1,13 @@
+check_name,result
+01 rows in orders,99441
+02 duplicate order_ids in orders,0
+03 duplicate customer_ids in customers,0
+04 duplicate product_ids in products,0
+05 order_items without matching order,0
+06 order_items without matching product,0
+07 delivered orders without payment,1
+08 delivered orders without items,0
+09 products without category,610
+10 payments with value <= 0,9
+11 items with price <= 0,0
+12 delivered orders without delivery date,8
