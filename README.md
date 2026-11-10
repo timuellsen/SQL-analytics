@@ -2,7 +2,7 @@
 
 ## 📌 Project Overview
 An end-to-end SQL analytics project based on the **Olist Brazilian E-Commerce Dataset** (~100k orders). 
-The goal of this project is to analyze monthly revenue growth, identify top product categories, and perform customer segmentation (RFM analysis) using SQL window functions.
+The goal of this project is to analyze monthly revenue growth, identify top product categories, perform customer segmentation (RFM analysis) using SQL window functions and data quality validation (integrity checks and revenue reconciliation).
 
 ---
 
@@ -112,6 +112,34 @@ Revenue = sum of item prices (excl. shipping).
 - Only 3 % of customers (2,801) ordered more than once, but they have the highest average spend (BRL 309).
 
 > **Note:** Revenue in queries 1 and 3 is based on `payment_value` (includes shipping and vouchers), while category revenue in query 2 uses item prices, so these figures are not directly comparable. Because `NTILE` creates equally sized groups, similar segment sizes reflect the method, not the business.
+
+---
+
+### Data Quality Checks
+Before analysing, the dataset was validated with SQL checks ([`queries/04_data_quality_checks.sql`](./queries/04_data_quality_checks.sql)) and revenue was reconciled against item prices ([`queries/05_reconciliation.sql`](./queries/05_reconciliation.sql)). Results are stored in [`outputs/`](./outputs/).
+
+**Integrity and plausibility checks**
+
+| Check | Result | Handling |
+| :--- | ---: | :--- |
+| Duplicate primary keys (orders, customers, products) | 0 | – |
+| Order items without matching order / product | 0 | – |
+| Delivered orders without items | 0 | – |
+| Delivered orders without payment | 1 | Dropped by the inner join on `payments` (not counted in revenue) |
+| Products without category | 610 | Excluded from the category ranking (`IS NOT NULL`) |
+| Payments with value <= 0 | 9 | Kept; negligible effect on revenue |
+| Items with price <= 0 | 0 | – |
+| Delivered orders without delivery date | 8 | No impact, delivery dates are not used in this project |
+
+**Reconciliation (delivered orders)**
+
+| Total payments (BRL) | Item prices + freight (BRL) | Difference |
+| ---: | ---: | ---: |
+| 15,422,461.77 | 15,419,630.29 | +2,831.48 (+0.02 %) |
+
+246 orders deviate by more than BRL 1. Among the affected payment rows, 239 of 251 are credit card payments (avg. deviation +BRL 11.88), which is consistent with interest on installment plans. The remaining cases (debit card, voucher) are too few to interpret.
+
+**Findings:** The dataset is structurally clean: keys are unique and every order item links to an existing order and product. The remaining issues are small (one delivered order without a payment record, 610 products without a category, 8 delivered orders without a delivery date) and are either excluded or have no impact on the analysis. Total payments match item prices plus freight within 0.02 %, so the revenue figures can be considered reliable.
 
 ---
 
